@@ -18,6 +18,22 @@ $app->get('/api/points', function(Request $request, Response $response){
 });
 
 $app->post('/api/points', function(Request $request, Response $response){
+	global $db;
+	$response = $response->withHeader('Content-type', 'application/json');
+
+	$stm = $db->prepare("INSERT INTO `point_of_interest` (`lat`, `lng`) VALUES (:lat, :lng)");
+
+	$postParams = $request->getParsedBody();
+	$params = array(
+		':lat' => $postParams['lat'],
+		':lng' => $postParams['lng'],
+	);
+	if($stm->execute($params)) {
+		$currentId = array();
+		$currentId['id'] = $db->lastInsertId();
+		$response->getBody()->write(json_encode($currentId));
+	}
+
 });
 
 $app->delete('/api/points', function(Request $request, Response $response){
