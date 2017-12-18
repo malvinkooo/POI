@@ -36,7 +36,14 @@ $app->post('/api/points', function(Request $request, Response $response){
 
 });
 
-$app->delete('/api/points', function(Request $request, Response $response){
+$app->delete('/api/points', function(Request $request, Response $response, $args){
+	global $db;
+
+	$stm = $db->prepare("DELETE FROM `point_of_interest` WHERE id = ?");
+	$id = $request->getParams();
+	$id = $id['id'];
+	echo $id;
+	$stm->execute(array($id));
 });
 
 $app->put('/api/points', function(Request $request, Response $response){

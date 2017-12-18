@@ -56,8 +56,12 @@ map.on('load', function(){
 				}
 
 				var marker = L.marker([lat, lng]);
-				marker.addTo(map).bindPopup(text + icons);
-				marker.id = data[i]['id'];
+				var popup = L.popup().setLatLng([lat, lng]).setContent(text + icons);
+
+				popup.marker = marker;
+				popup.markerId = data[i]['id'];
+
+				marker.addTo(map).bindPopup(popup);
 			}
 		}
 	}
@@ -89,8 +93,8 @@ map.on('click', function(e){
 	xhr.send(data);
 });
 
-map.on('popupclose', function(e){
-	console.dir(e);
+// map.on('popupclose', function(e){
+	// console.dir(e);
 	// if(e.popup._contentNode.children[0]) {
 	// 	var value = e.popup._contentNode.children[0].value;
 	// 	console.log(value);
@@ -98,19 +102,28 @@ map.on('popupclose', function(e){
 	// 	var content = e.popup._content;
 	// 	console.log(content);
 	// }
-});
+// });
+
+/*removes marker*/
 map.on('popupopen', function(e){
-	var currentId = e.popup._source.id;
-	console.log(currentId);
+	var currentId = e.popup.markerId;
 
 	document.querySelector('.delete').addEventListener('click', function(){
-		var lat = e.popup._latlng['lat'];
-		var lng = e.popup._latlng['lng'];
-		console.log(e.popup);		// var data = {};
-		// data['id'] = currentId;
+		e.popup.marker.remove();
 
-		// var xhr = new XMLHttpRequest();
-		// xhr.open('DELETE', 'api/points', true);
+		var data = {};
+		data['id'] = currentId;
+		data = JSON.stringify(data);
+
+		var xhr = new XMLHttpRequest();
+		xhr.open('DELETE', 'api/points', true);
+		xhr.setRequestHeader('Content-type', 'application/json; charset=utf-8');
+		xhr.onreadystatechange = function() {
+			if(xhr.readyState === XMLHttpRequest.DONE) {
+				console.log('Marker has been removed');
+			}
+		}
+		xhr.send(data);
 	});
 });
 
