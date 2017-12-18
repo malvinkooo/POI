@@ -16,14 +16,7 @@
 <div id="map"></div>
 </body>
 <script>
-var map = L.map('map').setView([46.4880795, 30.7410718], 18);
-
-L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
-	attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
-}).addTo(map);
-
-L.marker([46.4880795, 30.7410718]).addTo(map)
-    .bindPopup('A pretty CSS3 popup.<br> Easily customizable.');
+var map = L.map('map');
 
 // map.on('click', function(e){
 // 	var lat = parseFloat(e.latlng.lat.toFixed(7));
@@ -34,17 +27,52 @@ L.marker([46.4880795, 30.7410718]).addTo(map)
 // 	L.marker([lat, lng]).addTo(map).bindPopup('Some text');
 // });
 
-/*get all points*/
-// map.on('load', function(e){
-// 	var xhr = new XMLHttpRequest();
-// 	xhr.open('GET', 'api/points', true);
-// 	xhr.onreadychange = function() {
-// 		var HTTP_REQUEST_DONE = 4;
-// 		if(xhr.readyState === HTTP_REQUEST_DONE) {
-// 			console.log(xhr.responseText);
-// 		}
-// 	}
-// 	xhr.send();
-// });
+/*gets all points*/
+map.on('load', function() {
+	var xhr = new XMLHttpRequest();
+	xhr.open('GET', 'api/points', true);
+	xhr.onreadystatechange = function() {
+		if(xhr.readyState === XMLHttpRequest.DONE) {
+			var data = JSON.parse(xhr.responseText);
+			for(var i = 0; i < data.length; i++) {
+				var lat = parseFloat(data[i]['lat']);
+				var lng = parseFloat(data[i]['lng']);
+				var text = data[i]['text'];
+
+				L.marker([lat, lng]).addTo(map).
+							bindPopup(text);
+			}
+		}
+	}
+	xhr.send();
+});
+
+/*sets new marker*/
+map.on('click', function(e){
+	var lat = parseFloat(e.latlng.lat.toFixed(7));
+	var lng = parseFloat(e.latlng.lng.toFixed(7));
+
+	L.marker([lat, lng]).addTo(map).bindPopup('<input name type="text">');
+
+	var data = {};
+	var xhr = new XMLHttpRequest();
+	xhr.open('POST', 'api/points', true);
+	xhr.onreadystatechange = function() {
+		data['lat'] = lat;
+		data['lng'] = lng;
+		data = JSON.stringify(data);
+	}
+	xhr.send(data);
+	console.log(data);
+});
+
+
+
+
+
+map.setView([46.4880795, 30.7410718], 18);
+L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+	attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
+}).addTo(map);
 </script>
 </html>
