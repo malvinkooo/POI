@@ -28,91 +28,109 @@
 </body>
 <script>
 var map = L.map('map');
-
-// map.on('click', function(e){
-// 	var lat = parseFloat(e.latlng.lat.toFixed(7));
-// 	var lng = parseFloat(e.latlng.lng.toFixed(7));
-
-// 	console.log(lat, lng);
-
-// 	L.marker([lat, lng]).addTo(map).bindPopup('Some text');
-// });
 var icons = '<img class="icon delete" src="delete.png">' + '<img class="icon edit" src="edit.png">';
+
 /*gets all places*/
 map.on('load', function(){
 	var xhr = new XMLHttpRequest();
 	xhr.open('GET', 'api/places', true);
 	xhr.onreadystatechange = function() {
-		if(xhr.readyState === XMLHttpRequest.DONE) {
-			var data = JSON.parse(xhr.responseText);
-			for(var i = 0; i < data.length; i++) {
-				var lat = parseFloat(data[i]['lat']);
-				var lng = parseFloat(data[i]['lng']);
+		if(xhr.status === 200) {
+			if(xhr.readyState === XMLHttpRequest.DONE) {
+				var data = JSON.parse(xhr.responseText);
+				for(var i = 0; i < data.length; i++) {
+					var lat = parseFloat(data[i]['lat']);
+					var lng = parseFloat(data[i]['lng']);
 
-				if(data[i]['text']) {
-					var text = data[i]['text'];
-				} else {
-					var text = '<input class="input" type="text">';
+					if(data[i]['text']) {
+						var text = data[i]['text'];
+					} else {
+						var text = '<input class="input" type="text">';
+					}
+
+					var marker = L.marker([lat, lng]);
+					var popup = L.popup().setLatLng([lat, lng]).setContent(text + icons);
+
+					popup.marker = marker;
+					popup.markerId = data[i]['id'];
+
+					marker.addTo(map).bindPopup(popup);
 				}
-
-				var marker = L.marker([lat, lng]);
-				var popup = L.popup().setLatLng([lat, lng]).setContent(text + icons);
-
-				popup.marker = marker;
-				popup.markerId = data[i]['id'];
-
-				marker.addTo(map).bindPopup(popup);
 			}
+		} else {
+			var error = JSON.parse(xhr.responseText);
+			alert(error.error + ':' + error.details);
 		}
 	}
 	xhr.send();
 });
 /*sets new marker*/
 map.on('click', function(e){
-	var lat = e.latlng.lat;
-	var lng = e.latlng.lng;
-
 	var marker = L.marker(e.latlng);
-	marker.addTo(map).bindPopup('<input class="input" type="text">' + icons);
+	var popup = L.popup()
+				.setLatLng(e.latlng)
+				.setContent('<input class="input" type="text">' + icons);
+	popup.marker = marker;
+	marker.addTo(map).bindPopup(popup);
 
 	var data = {};
-	data['lat'] = lat;
-	data['lng'] = lng;
+	data['lat'] = e.latlng.lat;
+	data['lng'] = e.latlng.lng;
 	data = JSON.stringify(data);
 
 	var xhr = new XMLHttpRequest();
 	xhr.open('POST', 'api/places', true);
 	xhr.setRequestHeader('Content-type', 'application/json; charset=utf-8');
-
 	xhr.onreadystatechange = function() {
-		if(xhr.readyState === XMLHttpRequest.DONE) {
-			var markerData = JSON.parse(xhr.responseText);
-			marker.id = markerData['id'];
+		if(xhr.status === 200) {
+			if(xhr.readyState === XMLHttpRequest.DONE) {
+				var markerData = JSON.parse(xhr.responseText);
+				popup.markerId = markerData['id'];
+			}
+		} else {
+			var error = JSON.parse(xhr.responseText);
+			alert(error.error + ':' + error.details);
 		}
 	}
 	xhr.send(data);
 });
 
-// map.on('popupclose', function(e){
-	// console.dir(e);
-	// if(e.popup._contentNode.children[0]) {
-	// 	var value = e.popup._contentNode.children[0].value;
-	// 	console.log(value);
-	// } else {
-	// 	var content = e.popup._content;
-	// 	console.log(content);
-	// }
-// });
+/*add text to popup*/
+map.on('popupclose', function(e){
+	var popup = e.popup;
+	var el = popup.getElement().querySelector('input');
+
+	if(el && el.value) {
+		var data = {};
+		data['text'] = el.value;
+		data = JSON.stringify(data);
+
+		var xhr = new XMLHttpRequest();
+		xhr.open('PUT', 'api/places/' + e.popup.markerId, true);
+		xhr.setRequestHeader('Content-type', 'application/json; charset=utf-8');
+		xhr.onreadystatechange = function() {
+			if(xhr.status === 200) {
+				if(xhr.readyState === XMLHttpRequest.DONE) {
+					popup.setContent(el.value + icons);
+				}
+			} else {
+				var error = JSON.parse(xhr.responseText);
+				alert(error.error + ":" + error.details);
+			}
+		}
+		xhr.send(data);
+	} else {
+		return;
+	}
+});
 
 /*removes marker*/
 map.on('popupopen', function(e){
-	var currentId = e.popup.markerId;
-
 	document.querySelector('.delete').addEventListener('click', function(){
 		e.popup.marker.remove();
 
 		var xhr = new XMLHttpRequest();
-		xhr.open('DELETE', 'api/places/' + currentId, true);
+		xhr.open('DELETE', 'api/places/' + e.popup.markerId, true);
 		xhr.setRequestHeader('Content-type', 'application/json; charset=utf-8');
 		xhr.onreadystatechange = function() {
 			if(xhr.status === 200) {
@@ -121,16 +139,17 @@ map.on('popupopen', function(e){
 					console.log(xhr.status + ":" + xhr.statusText);
 				}
 			} else {
-				console.log(xhr.status + ":" + xhr.statusText);
-				console.log(xhr.responseText);
+				var error = JSON.parse(xhr.responseText);
+				alert(error.error + ':' + error.details);
 			}
 		}
 		xhr.send();
 	});
+
+	document.querySelector('.edit').addEventListener('click', function(){
+		e.popup.setContent('<input class="input" type="text">' + icons);
+	});
 });
-
-
-
 
 
 map.setView([46.4880795, 30.7410718], 18);
