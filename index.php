@@ -38,10 +38,10 @@ var map = L.map('map');
 // 	L.marker([lat, lng]).addTo(map).bindPopup('Some text');
 // });
 var icons = '<img class="icon delete" src="delete.png">' + '<img class="icon edit" src="edit.png">';
-/*gets all points*/
+/*gets all places*/
 map.on('load', function(){
 	var xhr = new XMLHttpRequest();
-	xhr.open('GET', 'api/points', true);
+	xhr.open('GET', 'api/places', true);
 	xhr.onreadystatechange = function() {
 		if(xhr.readyState === XMLHttpRequest.DONE) {
 			var data = JSON.parse(xhr.responseText);
@@ -72,7 +72,7 @@ map.on('click', function(e){
 	var lat = e.latlng.lat;
 	var lng = e.latlng.lng;
 
-	var marker = L.marker([lat, lng]);
+	var marker = L.marker(e.latlng);
 	marker.addTo(map).bindPopup('<input class="input" type="text">' + icons);
 
 	var data = {};
@@ -81,13 +81,13 @@ map.on('click', function(e){
 	data = JSON.stringify(data);
 
 	var xhr = new XMLHttpRequest();
-	xhr.open('POST', 'api/points', true);
+	xhr.open('POST', 'api/places', true);
 	xhr.setRequestHeader('Content-type', 'application/json; charset=utf-8');
 
 	xhr.onreadystatechange = function() {
 		if(xhr.readyState === XMLHttpRequest.DONE) {
-			var id = JSON.parse(xhr.responseText);
-			marker.id = id['id'];
+			var markerData = JSON.parse(xhr.responseText);
+			marker.id = markerData['id'];
 		}
 	}
 	xhr.send(data);
@@ -111,19 +111,21 @@ map.on('popupopen', function(e){
 	document.querySelector('.delete').addEventListener('click', function(){
 		e.popup.marker.remove();
 
-		var data = {};
-		data['id'] = currentId;
-		data = JSON.stringify(data);
-
 		var xhr = new XMLHttpRequest();
-		xhr.open('DELETE', 'api/points', true);
+		xhr.open('DELETE', 'api/places/' + currentId, true);
 		xhr.setRequestHeader('Content-type', 'application/json; charset=utf-8');
 		xhr.onreadystatechange = function() {
-			if(xhr.readyState === XMLHttpRequest.DONE) {
-				console.log('Marker has been removed');
+			if(xhr.status === 200) {
+				if(xhr.readyState === XMLHttpRequest.DONE) {
+					console.log('Marker has been removed');
+					console.log(xhr.status + ":" + xhr.statusText);
+				}
+			} else {
+				console.log(xhr.status + ":" + xhr.statusText);
+				console.log(xhr.responseText);
 			}
 		}
-		xhr.send(data);
+		xhr.send();
 	});
 });
 
