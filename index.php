@@ -42,15 +42,17 @@ map.on('load', function(){
 					var lat = parseFloat(data[i]['lat']);
 					var lng = parseFloat(data[i]['lng']);
 
+					var marker = L.marker([lat, lng]);
+					var popup = L.popup().setLatLng([lat, lng]);
+
 					if(data[i]['text']) {
 						var text = data[i]['text'];
+						popup.markerText = data[i]['text'];
 					} else {
 						var text = '<input class="input" type="text">';
 					}
 
-					var marker = L.marker([lat, lng]);
-					var popup = L.popup().setLatLng([lat, lng]).setContent(text + icons);
-
+					popup.setContent(text + icons);
 					popup.marker = marker;
 					popup.markerId = data[i]['id'];
 
@@ -101,6 +103,8 @@ map.on('popupclose', function(e){
 	var el = popup.getElement().querySelector('input');
 
 	if(el && el.value) {
+		popup.markerText = el.value;
+
 		var data = {};
 		data['text'] = el.value;
 		data = JSON.stringify(data);
@@ -125,29 +129,35 @@ map.on('popupclose', function(e){
 });
 
 /*removes marker*/
-map.on('popupopen', function(e){
-	document.querySelector('.delete').addEventListener('click', function(){
-		e.popup.marker.remove();
+function deleteMarker(){
+	this.popup.marker.remove();
 
-		var xhr = new XMLHttpRequest();
-		xhr.open('DELETE', 'api/places/' + e.popup.markerId, true);
-		xhr.setRequestHeader('Content-type', 'application/json; charset=utf-8');
-		xhr.onreadystatechange = function() {
-			if(xhr.status === 200) {
-				if(xhr.readyState === XMLHttpRequest.DONE) {
-					console.log('Marker has been removed');
-					console.log(xhr.status + ":" + xhr.statusText);
-				}
-			} else {
-				var error = JSON.parse(xhr.responseText);
-				alert(error.error + ':' + error.details);
+	var xhr = new XMLHttpRequest();
+	xhr.open('DELETE', 'api/places/' + this.popup.markerId, true);
+	xhr.setRequestHeader('Content-type', 'application/json; charset=utf-8');
+	xhr.onreadystatechange = function() {
+		if(xhr.status === 200) {
+			if(xhr.readyState === XMLHttpRequest.DONE) {
+				console.log('Marker has been removed');
+				console.log(xhr.status + ":" + xhr.statusText);
 			}
+		} else {
+			var error = JSON.parse(xhr.responseText);
+			alert(error.error + ':' + error.details);
 		}
-		xhr.send();
-	});
+	}
+	xhr.send();
+}
+map.on('popupopen', function(e){
 
-	document.querySelector('.edit').addEventListener('click', function(){
-		e.popup.setContent('<input class="input" type="text">' + icons);
+	e.popup.getElement().querySelector('.delete').addEventListener('click', deleteMarker.bind(e));
+	e.popup.getElement().querySelector('.edit').addEventListener('click', function(){
+		var text = "";
+		if(e.popup.markerText){
+			var text = e.popup.markerText;
+		}
+		e.popup.setContent('<input class="input" type="text" value="'+ text +'">' + icons);
+		e.popup.getElement().querySelector('.delete').addEventListener('click', deleteMarker.bind(e));
 	});
 });
 
