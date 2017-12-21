@@ -61,7 +61,8 @@ map.on('load', function(){
 			}
 		} else {
 			var error = JSON.parse(xhr.responseText);
-			alert(error.error + ':' + error.details);
+			alert(error.error);
+			console.log(error.details);
 		}
 	}
 	xhr.send();
@@ -91,7 +92,8 @@ map.on('click', function(e){
 			}
 		} else {
 			var error = JSON.parse(xhr.responseText);
-			alert(error.error + ':' + error.details);
+			alert(error.error);
+			console.log(error.details);
 		}
 	}
 	xhr.send(data);
@@ -119,7 +121,8 @@ map.on('popupclose', function(e){
 				}
 			} else {
 				var error = JSON.parse(xhr.responseText);
-				alert(error.error + ":" + error.details);
+				alert(error.error);
+				console.log(error.details);
 			}
 		}
 		xhr.send(data);
@@ -143,22 +146,24 @@ function deleteMarker(){
 			}
 		} else {
 			var error = JSON.parse(xhr.responseText);
-			alert(error.error + ':' + error.details);
+			alert(error.error);
+			console.log(error.details);
 		}
 	}
 	xhr.send();
 }
-map.on('popupopen', function(e){
-
-	e.popup.getElement().querySelector('.delete').addEventListener('click', deleteMarker.bind(e));
-	e.popup.getElement().querySelector('.edit').addEventListener('click', function(){
+function editMarker(){
 		var text = "";
-		if(e.popup.markerText){
-			var text = e.popup.markerText;
+		if(this.popup.markerText){
+			var text = this.popup.markerText;
 		}
-		e.popup.setContent('<input class="input" type="text" value="'+ text +'">' + icons);
-		e.popup.getElement().querySelector('.delete').addEventListener('click', deleteMarker.bind(e));
-	});
+		this.popup.setContent('<input class="input" type="text" value="'+ text +'">' + icons);
+		this.popup.getElement().querySelector('.delete').addEventListener('click', deleteMarker.bind(this));
+	}
+
+map.on('popupopen', function(e){
+	e.popup.getElement().querySelector('.delete').addEventListener('click', deleteMarker.bind(e));
+	e.popup.getElement().querySelector('.edit').addEventListener('click', editMarker.bind(e));
 });
 
 

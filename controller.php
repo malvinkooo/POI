@@ -25,12 +25,13 @@ $app->get('/api/places', function(Request $request, Response $response){
 $app->post('/api/places', function(Request $request, Response $response){
 	global $db;
 
-	$stm = $db->prepare("INSERT INTO `point_of_interest` (`lat`, `lng`) VALUES (:lat, :lng)");
+	$stm = $db->prepare("INSERT INTO `point_of_interest` (`lat`, `lng`, `text`) VALUES (:lat, :lng, :text)");
 
 	$postParams = $request->getParsedBody();
 	$params = array(
 		':lat' => $postParams['lat'],
 		':lng' => $postParams['lng'],
+		':text' => (isset($postParams['text'])) ? $postParams['text'] : ''
 	);
 	if($stm->execute($params)) {
 		$currentId = $db->lastInsertId();
